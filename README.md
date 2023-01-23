@@ -1,0 +1,6 @@
+# Text-mining-Word-cloud-and-Sentiment-analysis-
+This project involves a descriptive analysis on the text mining data extracted from Twitter and Reddit.The nature of the text is political and was centered on public opinion towards the Indian elections in 2019.
+The project was extracted from the Kaggle website. 
+The data source of both the Twitter and Reddit files were in csv format and hence, this might be helpful for beginners who aim to understand how to code text mining using a csv file. The html file includes the data visualizations embedded with evaluations. 
+
+Though the analytic nature of the project was descriptive, the findings in the text mining analysis reveal that word frequency on social media platforms could have an influence on political outcomes in the electorate. This was revealed by results of negative sentiments relating to the opposition. The word frequencies revealed the BJP and incumbent Modi dominated the Reddit and Twitter space and hence the suggestion is that, this could have contributed to electoral perceptions for the 2019 elections. Thus according to sources, with Modi having being re-elected to the office of the Prime Minister in the 2019 elections, word frequency of political players may influence political perception in the elections in free world.

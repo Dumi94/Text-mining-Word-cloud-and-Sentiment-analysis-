@@ -1,0 +1,226 @@
+---
+title: "Twitter_Reddit_Analysis"
+author: "Dumi Yambira"
+date: "2022-12-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraryunload, echo=FALSE, include=FALSE, warning=FALSE,message= FALSE}
+#Use this chunk to install the required libraries
+library(tidyverse)
+library(dplyr)
+library(tidytext)
+library(ggplot2)
+library(wordcloud)
+library(reshape2)
+library(RColorBrewer)
+library(wordcloud2)
+library(tm)
+```
+
+```{r Dataset_unload, echo=FALSE, include=FALSE}
+#1.create new variables with loaded dataset into R
+#load Reddit data first and call it Reddit
+reddit <- read_csv(file = "Reddit_Data.csv", col_names = TRUE)
+
+#load Twitter data second and call it Twitter
+twitter <- read_csv(file = "Twitter_Data.csv", col_names = TRUE)
+
+#next stage, remove unwanted columns one using dplyr and the other using base R then unnest the tokens
+```
+
+```{r Datascrubbing, echo=FALSE, include=FALSE}
+#2.remove unwanted column using base R for reddit
+reddit <- reddit[,-2]
+
+#check for any NA`s
+is.na(reddit)
+
+#remove unwanted column using dplyr for twitter
+twitter <- twitter %>% select(clean_text)
+
+#check for any NA`s 
+is.na(twitter)
+
+#3.unnest tokens starting with reddit
+reddit_token <- reddit %>% unnest_tokens(word, clean_comment)
+
+#unnest tokens for twitter data
+twitter_token <- twitter %>% unnest_tokens(word, clean_text)
+
+#remove stopwords for reddit
+reddit_token <- reddit_token %>% anti_join(stop_words)
+
+#remove stopwords for twitter
+twitter_token <- twitter_token %>% anti_join(stop_words)
+
+#next stage, use exploratory data visualization to make sense of the data through count, word frequency and potentially remove extra stopwords. Then use word cloud for explanatory (descriptive)
+```
+
+```{r exploratory data2, echo=FALSE,include=FALSE}
+#4. Use wordcloud
+#start with reddit data
+reddit_token %>% count(word, sort = TRUE) %>%
+  with(wordcloud(word, n, max.words = 100))
+
+#commence with twitter data
+twitter_token %>% count(word, sort = TRUE) %>%
+  with(wordcloud(word, n, max.words = 100))
+
+#next assignment,remove extra stopwords
+#go on page 25 of text mining and turn word cloud to sentiment analysis
+```
+
+```{r removing extra stopwords, echo=FALSE, message=FALSE}
+#5.remove extra stop words
+#commence with reddit
+reddit_stopwords <- tribble(
+  ~word,          ~lexicon,
+  "bullshit",       "CUSTOM",
+  "fuck",           "CUSTOM",
+  "fucking",        "CUSTOM",
+  "shit",           "CUSTOM",
+  "damn",           "CUSTOM",
+  "bad",            "CUSTOM",
+  "wrong",          "CUSTOM",
+  "hate",           "CUSTOM",
+  "issue",          "CUSTOM",
+  "hard",           "CUSTOM",
+  "attack",         "CUSTOM",
+  "poor",            "CUSTOM",
+  "hate",            "CUSTOM",
+  "fake",            "CUSTOM",
+  "strike",          "CUSTOM",
+  "wrong",           "CUSTOM",
+  "failed",          "CUSTOM",
+  "shame",           "CUSTOM",
+  "achievement",     "CUSTOM",
+  "strong",          "CUSTOM",
+  "congratulations", "CUSTOM",
+  "promised",        "CUSTOM",
+  "win",             "CUSTOM"
+)
+
+stop_words2 <- stop_words %>% bind_rows(reddit_stopwords)
+reddit_token <- reddit_token %>% anti_join(stop_words2)
+
+#follow with Twitter data
+twitter_stopwords <- tribble(
+  ~word,           ~lexicon,
+  "poor",            "CUSTOM",
+  "hate",            "CUSTOM",
+  "fake",            "CUSTOM",
+  "strike",          "CUSTOM",
+  "wrong",           "CUSTOM",
+  "failed",          "CUSTOM",
+  "shame",           "CUSTOM",
+  "achievement",     "CUSTOM",
+  "strong",          "CUSTOM",
+  "congratulations", "CUSTOM",
+  "promised",        "CUSTOM",
+  "win",             "CUSTOM"
+)
+
+stop_words2 <- bind_rows(twitter_stopwords)
+twitter_token <- twitter_token %>% anti_join(stop_words2)
+
+```
+Detailed in this report is a social media assessment of the public opinion regarding India`s election prior to the 2019 plebiscites. Social media has become an influential platform that gives the users confidence to express their views. With the continued growth of users on social media, public opinions expressed via the popular platforms like Twitter are important as they carry the potential of influencing a voters decision on the ballot paper. This short report therefore presents a descriptive analysis using word cloud and sentimental analysis, regarding public opinion on the platforms of Reddit and Twitter.
+ 
+# Wordcloud
+```{r experiment new type of wordcloud, echo=FALSE, message=FALSE, warning=FALSE}
+#6. experiment with other codes
+# commence with reddit data using word cloud
+wordcloud(words = reddit_token$word, scale=c(3.5,0.25), min.freq = 1, max.words = 200, random.order = FALSE, rot.per = 0.35, colors = brewer.pal(8, "Dark2"))
+
+
+```
+
+The first word cloud plot is extracted from the Reddit texts. The plot reveals that words like people, India, BJP and Modi were more dominant. Users of the platform spoke more about the party, BJP and its leader Modi. As the largest democratic country by population, the word people might be suggestive of conversations concerning people`s rights. Another meaningful word frequently mentioned as seen in the plot is Pakistan. This is suggestive of the electorates concern about the foreign policy stance of the next upcoming Prime Minister. 
+
+
+```{r experiment with wordcloud2, echo=FALSE,message=FALSE,warning=FALSE}
+#7. produce word cloud using word cloud 2 
+# Do it with twitter data
+# Add another column to twitter token which shows word frequencies
+twitter_token2 <- twitter_token %>% count(word, sort = TRUE) %>% mutate(twitter_count = n())
+
+#remove unwanted column
+twitter_token2 <- twitter_token2 %>% select(-twitter_count)
+
+#now use the word cloud 2 to produce desired visualization
+wordcloud2(twitter_token2, size = 1.6, color = 'random-dark', shape = 'triangle')
+```
+The second plot shows a Twitter word cloud where the words Modi, BJP, people, India are dominant. This presents similarities with word frequencies extracted from the Reddit dataset. The similarity highlights how the ideas of the users might be the same inspite of different platforms. The higher word frequency associated with Modi shows his popularity in the Indian political space as compared to his rivals in 2019, a factor which can influence the electoral outcome. The Twitter plot generated using wordcloud2 is an interactive visualization, it shows word counts when the user hovers on the word.  
+
+
+# Sentiment Analysis
+
+
+```{r engage in sentiment analysis reddit, echo=FALSE, message=FALSE}
+#8.create a ggplot inverted bar chart which shows sentiment analysis
+#start with reddit data
+#8.1 create the sentiment
+reddit_sentiment <- reddit_token %>% inner_join(get_sentiments("bing"))
+
+#8.2 visualize the data
+reddit_sentiment2 <- reddit_sentiment %>%
+  filter(sentiment %in% c("positive", "negative"))
+
+reddit_sentiviz <- reddit_sentiment2 %>%
+  count(word, sentiment) %>%
+  group_by(sentiment) %>%
+  top_n(10, n) %>%
+  ungroup() %>%
+  mutate(
+    word2 = fct_reorder(word, n)
+  )
+
+ggplot(reddit_sentiviz, aes(word2, n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free") +
+  coord_flip() +
+  labs(
+    title = " Reddit sentiment word counts",
+    x = "Words"
+  )
+```
+
+The sentiment plot for Reddit indicates that corruption was associated with negative sentiments. This suggests that corruption was rampant and therefore electorates wanted a leader who stops corruption. The word free had the highest positive sentiment, suggestive of the freedom of expression which the electorates were enjoying under the incumbent government. The word opposition received a high negative sentiment highlighting how the majority of electorates were not in favor of the opposition. 
+
+```{r engage in sentiment analysis twitter, echo=FALSE, message=FALSE}
+#9. Create a visual plot for twitter
+# First create the sentiment variable
+twitter_sentiment <- twitter_token %>% inner_join(get_sentiments("bing"))
+
+#Create paths to visualizing the data
+twitter_sentiment2 <- twitter_sentiment %>%
+  filter(sentiment %in% c("positive", "negative"))
+
+twitter_sentiviz <- twitter_sentiment2 %>%
+  count(word, sentiment) %>%
+  group_by(sentiment) %>%
+  top_n(10, n) %>%
+  ungroup() %>%
+  mutate(
+    word2 = fct_reorder(word, n)
+  )
+
+ggplot(twitter_sentiviz, aes(x = word2, y = n, fill = sentiment)) + 
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ sentiment, scales = "free") +
+  coord_flip() +
+  labs(
+    title = "Twitter sentiment word counts",
+    x = "Words"
+  )
+```
+
+Similar to the users on Reddit, the word opposition carried the highest negative sentiment. The word counts on Twitter were more than those on Reddit showing how Twitter had a larger user base as to Reddit. This suggests that sentiments expressed on Twitter have a higher probability to be more influential in terms of politics. 
+
+## Conclusion
+This report has described the word frequency and sentiment analysis of political texts expressed via Reddit and Twitter. This report was based on the historical data of 2019, prior to the Indian elections. Based on the 2019 elections, Narendra Modi was re-elected as the Prime Minister of India. In evaluating the latter with the results of this report, the word frequency and sentiment analysis can be attributed as a correlation with the electoral outcome. The negative sentiment associated with the word opposition suggests that the majority of electorates were in disfavor of the opposition. The dominance of the word frequencies associated with BJP, Modi in the word plots is suggestive that higher word frequencies can influence perception relating to political outcomes.
